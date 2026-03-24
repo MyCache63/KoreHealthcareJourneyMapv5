@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kore.ai — AI for Healthcare Patient Journey</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #e8f0f4;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  .slide {
+    position: relative;
+    width: 100%;
+    max-width: 1440px;
+    aspect-ratio: 16 / 9;
+    background: linear-gradient(160deg, #b8e0fa 0%, #d0ebfb 30%, #b8dffb 50%, #a6d4f7 70%, #d5edfc 100%);
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.15);
+  }
+
+  .slide > * { position: absolute; }
+
+  /* Eyebrow */
+  .eyebrow {
+    left: 2.5%; top: 4%;
+    font-size: clamp(8px, 0.85vw, 12px);
+    font-weight: 700;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: #65717C;
+  }
+  .eyebrow .dot { color: #1077D7; }
+
+  /* Title */
+  .title {
+    left: 2.5%; top: 8.5%;
+    font-size: clamp(13px, 1.55vw, 22px);
+    font-weight: 600;
+    color: #181818;
+    max-width: 82%;
+    white-space: nowrap;
+    line-height: 1.25;
+  }
+
+  /* Kore.ai Logo */
+  .kore-logo {
+    right: 2.2%; top: 3.5%;
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+
+  /* Box styles */
+  .box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border-radius: 12%;
+    font-size: clamp(7px, 0.7vw, 11px);
+    font-weight: 500;
+    line-height: 1.3;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+    padding: 2%;
+  }
+  .box:hover {
+    transform: scale(1.08);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    z-index: 10;
+    filter: brightness(1.05);
+  }
+
+  .box-patient { background: #FFFFFF; color: #181818; }
+  .box-member { background: #57A0E3; color: #FFFFFF; }
+  .box-payer { background: #0C5EAB; color: #FFFFFF; }
+  .box-gradient {
+    background: linear-gradient(135deg, #FFFFFF 0%, #F0F6F9 50%, #57A0E3 100%);
+    color: #181818;
+  }
+
+  /* Phase labels */
+  .phase-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border-radius: 17%;
+    font-size: clamp(7px, 0.72vw, 11px);
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: #FFFFFF;
+    line-height: 1.25;
+    padding: 2%;
+  }
+
+  /* SVG lines layer */
+  .lines-layer {
+    left: 0; top: 0; width: 100%; height: 100%;
+    pointer-events: none;
+  }
+
+  /* Legend */
+  .legend-dot { border-radius: 3px; }
+  .legend-text {
+    font-size: clamp(7px, 0.7vw, 11px);
+    font-weight: 500;
+    color: #181818;
+  }
+  .legend-line {
+    height: 1px;
+    background: #65717C;
+  }
+
+  /* CTA Button */
+  .cta-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #1077D7;
+    color: #FFFFFF;
+    font-size: clamp(8px, 0.78vw, 11px);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    border-radius: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.18s ease, transform 0.15s ease, box-shadow 0.15s ease;
+    padding: 0 2%;
+    white-space: nowrap;
+  }
+  .cta-btn:hover {
+    background: #2d2d2d;
+    transform: scale(1.04);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+  }
+
+  /* Tooltip */
+  #tooltip {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    background: #FFFFFF;
+    border-radius: 10px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.22), 0 2px 8px rgba(0,0,0,0.08);
+    width: 340px;
+    max-height: 420px;
+    overflow-y: auto;
+    pointer-events: none;
+    animation: tooltipIn 0.18s ease;
+  }
+  #tooltip.visible { display: block; }
+
+  .tt-header {
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid #e8edf3;
+  }
+  .tt-phase {
+    font-size: 9px;
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
+    color: #65717C;
+    margin-bottom: 3px;
+  }
+  .tt-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #181818;
+  }
+  .tt-body {
+    padding: 14px 20px 18px;
+  }
+  .tt-body h4 {
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #1077D7;
+    margin-bottom: 8px;
+    font-weight: 700;
+  }
+  .tt-body p {
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: #3d4f65;
+    margin-bottom: 12px;
+  }
+  .tt-body ul {
+    margin: 0 0 12px 16px;
+    font-size: 12px;
+    line-height: 1.55;
+    color: #3d4f65;
+  }
+  .tt-body ul li { margin-bottom: 4px; }
+  .tt-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #eef4ff;
+    color: #1077D7;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 4px;
+  }
+
+  @keyframes tooltipIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<div class="slide" id="slide">
+
+  <!-- Eyebrow -->
+  <div class="eyebrow">USE CASE TIME SERIES MAPPING <span class="dot">&#9679;</span></div>
+
+  <!-- Title: benefit-first, includes AI for Healthcare -->
+  <div class="title">Delivering better health outcomes across the entire patient journey with AI for Healthcare</div>
+
+  <!-- Kore.ai Logo (top right) -->
+  <div class="kore-logo">
+    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABXgAAAHdCAYAAACnlRF5AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAUR5JREFUeNrs3d9120baB2Dsd3K/2jvdha4gcgWhKohcQagKLFUguQLZFUiuwEoFpiuwUoGZO93FW8F+eMVhzDiyOaSIv/M85/DQSRSLHACDmR8GL6oKAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABgg39pgmYcHh7O6rdJQV95fn9/P7flAQAAHuaEB/XbUf1avQPs2yK9Pt/f399pjnL9oAka82v9mhb2nec2OwAAUJrDw8NJmv/9VC3D3KlWAVruh+ItQt5F/fpQLRfiCX0LIeAFAACALR0eHp7Ubz/Xr3ifaBGgB47S6yT1U5+r5WK83+rX7f39/WdNNE4CXgAAAMhweHgYwUncrTmrlqUXAPos+qmT9Lqu+7Db+v23+/v7G00zLgJeAAAA+I70jJUSy/AB4/IQ9tZ92lX9/qZ+vbaqdxz+TxMAAADAP0WwW78+1X+8roS7wHjEyt6L+vVn3cddpzriDJiAFwAAANZEfd21YHeiRYARm9WvT3Wfd1m/lJ4ZKAEvAAAAVMsau/Xrff3Hd5VgFyhLrOj9lErSMDACXgAAAIoXq9fqt4+VUgxAuWIFb5RseK9sw7B4yBoAAADFilW71bIUw9Ee/9p5/bqrX3+k98/39/d3WhvYY991kPqt1ftP6X2yh79+Wr8+1r/jvO67brR2/wl4AQAAKFK6FTmeJv/UupMR3v5Wv+b39/dzLQs0re5rPlfLi0nhdq1fm1TLgPaX+nXyhF+xWs37c/1+nn4fPSXgBQAAoDiHh4cR7J494a9Y1K+39evm/v5+oUWBPkj90U280irfCHl/rXYvPzOrX1Gf/IW+rr8EvAAAABQjBR5RkmHXlW3z+vXm/v7+VmsCfZZW3d5Uy7B3Ui0fpBZ937Z3LUTphyjZcKzcTD95yBoAAABFSOHu+2q3cHdevyLcOBbuAkMTq2/r12n9x2f16/UOf8VD/5nqltMzAl4AAABGby3c3TacWNSvFynYnWtJYMhiVW/9Oq+WQe+2F6uiH/2Y6pfTIwJeAAAARu0J4W6scntuxS4wNmlF74v6j/Ha9gFq11by9ouAFwAAgNHaMdxdVMtyDJ4cD4xauoC1y2pe5Rp6RMALAADAmF1V24W7EXI8V44BKEUq2xArec+3+N9WNXknWrB7Al4AAABG6fDw8LJ+m23xv7yOkMOqXaBEdd/3UJamyi/ZECHvu3SnBB0S8AIAADA6h4eHJ/XbxRb/y2l68BBAsep+8K5+O66WpWpyxB0S11quWwJeAAAARiXdMrxN4BDh7o2WA/gr5I2VvHeZ/8tJ3e+eabnuCHgBAAAYmwh3c28ZFu4CfCWVqomVvLkh75WHrnVHwAsAAMBopFVk08wfF+4CfEMKeU+r/Jq8SjV0RMALAADAKKTSDLl1d2+EuwDft1aTNyfkPUoPt6RlAl4AAADG4qrKK80wv7+/P9VcAJulkDf3IZQv08U2WiTgBQAAYPAODw+n9dtJxo/GKrQXWgwgX7rj4SbjR+Mi24UWa5eAFwAAgDHIDRRepLqSAGwnVvEuMn5uZhVvuwS8AAAADNrh4eGsynuw2uv7+/u5FgPY3tpD13JcabH2CHgBAAAYupcZPxPBxCtNBbC7dJHsdcaPnljF2x4BLwAAAIOVau8eZfzoudIMAHsRF8ty+lO1eFsi4AUAAGDIclbvLtIDggB4onSx7E3Gj0Yt3gMt1jwBLwAAAIOUbv89yfhRpRkA9ivKNOSs4p1pquYJeAEAABiqnHDX6l2APdtiFe9LrdU8AS8AAABD9WvGz1i9C9CMnFW8k8PDwyNN1SwBLwAAAIOTyjNsCg0ieLjVWgD7l1bx5vSxv2qtZgl4AQAAGKKc8gy3KYAAoBk5ZRqmmqlZAl4AAACG6JeMn3mjmQCac39/f1e/LTb82FG664KGCHgBAAAYoumG//45BQ8ANCunTMNUMzVHwAsAAMCgHB4eTjN+TO1dgHb8lvEzP2um5gh4AQAAGJqcJ7J/0EwAzbu/v59Xy4daPrXfZkcCXgAAAIbmp4yfmWsmgNZsKokj4G2QgBcAAIChmWz474v7+/uFZgJozca7Jg4PD4W8DRHwAgAAMDTTDf99oYkAWpXzUMuJZmqGgBcAAIDBODw8PMj4MfV3Adq1yPgZK3gbIuAFAABgSHICgs+aCaA99/f3d1qhOwJeAAAAxkbQANC+TRfXftJEzRDwAgAAAABPteni2oEmaoaAFwAAgCGZagIA+ELACwAAwKjc39/PtQIApRDwAgAAAAAMlIAXAAAAAGCgBLwAAAAAAAMl4AUAAAAAGCgBLwAAAADAQAl4AQAAAAAGSsALAAAAADBQAl4AAAAAgIES8AIAAAAADJSAFwAAAABgoAS8AAAAAAADJeAFAAAAABgoAS8AAAAAwEAJeAEAAAAABkrACwAAAAAwUAJeAAAAAICBEvACAAAAAAyUgBcAAAAAYKB+0AQAAADA0BweHk7qt8n3fub+/n7e488/HVqb97k9U5u+H2CbHjuaeSoBLwAAANAra+HttH79u34dpf803fLv+fpfzdP7on79kd4XHQWX7we4af7V8883dfRQIgEvAAAA0JkU5k7r10/VMsidNvjrpt/4DPG2SK8P9euufs3v7+8/20JA3wl4AQAAgNYcHh4eVMug9Zf0PunJR5tUX1YNrz7rQ9BbLUNfgS/QSwJeAAAAoFEp1D2plqHuyYA++lF6naXvcVstw97b+/v7hS0L9IGAFwAAAGjE4eHhrBpeqPs9J+l1VX+3ef3+tlqGvVb2Ap0R8AIAAAB7k2rqvqxfs/p1MOKvOk2vq7Sy9839/f2dPQBo2/9pAgAAAOCpDg8Pp/XrXf3HT9WypMFBIV89vuesfn2sv//7+nVibwDaJOAFAAAAdpaC3ff1H+NVerg5rV/v6vb4lMpTADROwAsAAABs7atgd6pF/mZSv65T0KttgEYJeAEAAIBsUWM3lWIQ7G42iXZKpRuONAfQBAEvAAAAsNHh4eFB/bqsljV21ZndzrRa1uiNB7IdaA5gnwS8AAAAwHelMgMf69eF1niSePjcRw9iA/bpB00AAAAAPCatNo1Q90xr7M2kfr3TDMC+CHgBAACAf0irdq+rZSAJQE8p0QAAAAD8Taq1Gw9Rm2gNgH6zghcAAAB4kEoyRPmAqdYAGAYBLwAAABDh7lG1XLV7oDUAhkOJBgAAACjc4eHhrH77WAl3AQZHwAsAAAAFS/V2r7UEwDAp0QAAACOUbrXetBLv7v7+/rPWgqL7igh2Z1oCYLgEvAAAMABrge3q/d/pz2FS7fik+/rvXf/HCHvv0p8X9euPtX/3+f7+/s6WgFH1K8JdgBEQ8EI/BlZTrZDFxLLd/XI9LHgsOPjxkX+3CgO+GRbU23ChdfVbA2OF47e3uX65mbaO0PYo9bE/V08Ib3cQwfH0O5+tSn169OW/pz/f6dthkH2NcBdgJAS8YGA1JKfVl6CQ/YUIERrE+49rfz5o8HfG21+rwdYCgoWgaFDeF/Rdj+vXfKTH//pq0PWLNpMqL1Ccp/Zh9+0Q7TytXz+lbTEdwMdeBdAna99j1a9/iP2i7s/nti6YgwDQDgEvGFgNxat6snijGZ60v60m5H0IEdZXiK0HBFUKCOL1EPwKCeDJx34ca5Oqm9Wg/HN7TFL/93N6H8u2WPXr8bpI/Xn03xH43rqAB+YgADRHwAvdDazODKyy3dQTw0vNsPU+tgpxVyHCwUA++iqIXn2P9ZDAqjD4/nE/qb6sBp2uH0t03h//WuA2mVZfAt9Y4Xtbv36r+/FbewV01h8JdwFGSMAL3QysYlB1pSWyRLh7qhmy9qsIcGM17M/p/WBEX+/rkGAeIUG1DHwXtj4FH/eTapyrQcewbaIf/mWE/fGuog1i/DMT9kJn/dJVJdwFGCUBL7Q/sIpB1bWWyCLc3bw/rULdVYhQSkhwsvq+dRvEbb9vq+UtwAt7BQUc96WuBh3StplVQt1N/Xi00Srsvalfb/Th0Pgc5ExLAIyTgBfan/gJd/NEaHeuGb47SC8p1P2eVUmHq7WwNy4OfNY0jOz88Ws65idapFfbZnXR6WUlcN9FtF+ETmd1W86jD1dzH/beT03NQQDGTcAL7U7O32uJLBHSHQvoHt2HIkBwu++3rYe9tykocPsvQz3mJ9WX4HCiRXq5fS70yXs1jVe6jfxN/XptLAB76aveaQmAcRPwQjsDq1W4awK4mXD3n/vPrLIybBcPZRzq9ltUy1W9ggKGcsxPqy8Xc+jn9olgd6o1GnOQ2vhlulj3SvkG2Km/imPpnTkIwPgJeKGdgZVwN09M3oS7X/abuGX1pX3nySYpKIgHtN0ICujxMX+S9tWJFunlNppWgt22rdfq1X/D9mI1vAUCAAX4P00AjU/Yhbt5ItR9UXq4G7fR1a/L+o+fqmWQYN/ZrwgKPtVt/D6FNdD5eWLtmI/6iBOt0rttFCUD3qfzuX6j+/77Mo2vgO/3XSfpuAGgAAJeaHDSniaDrppvFqFurNy9K3l/qV8R7gh22zGN41PQS8fH/KVjvtfbSLDbT3G8RNB7pingm/3XpPJQNYCiKNEAzRHu5ik63FWKoXPTavlAn3m1vPV3rklwzBe/jSbVMkScaY3eimMnHqYZx9Gpvhv+4do5BqAsVvBCM5PDGFQJd/OcFhzuRshj9V4/TKsvK3onmoOGjvlZ/fbRMd/rbXSZttFMawzCJPXd75RtgL+NL6daAqAsAl7Y/6Dq2sQwW4S7twXuI7FiNILdePCFCWm/xIQobv29Ehaw52M+7upQY7f//bLwfZhOKmUbYHWXyIWWACiPgBf2O6gS7uaLcPemsP0jHqD2rlqW75jYBXrtLIUFjmeeNNGOiwWVGq5D2Ub65WFblW147wIdBVOaAaBQavDC/iaJs0q4m6vEcDcCQyvDhhcWXNfb7te0zy40CVsc8ycm2r3fRtPKquoxiu0aF+iKvEuI4vu0Ey3xYF6/Ytz2R3pfbOgzwo/pfHDk3A0MkYAX9jOgmlWeVJvrpqRwt943jtK+oSbz8MOCeAjbpeZgwzF/kI55k+x+b6O44OZ2/vGKbRx1eWO8cV733Z81CQUodS4Sx/e8fn2I9x2e7TF/5DwxSWP3n9M40Dge6D0BLzx9ojirhLu5Itw9LWjfiPDgymYfjYt6m/5Sv7+wmpdvHPMxCYwyLFb+9HcbuehWlhijHdXbXb9NCfORSWnzivr1WxMr9VN/Ea/b1L7RtnGO/7VScgnoKTV44ekTRQFe5iCslHA31dp9b98YpTjmP3qQD48c96s6rsLd/m6jWdpGwt0y+22r6hlr33ZQ0JgzVuu+ql//iXlFW2VYIvCNOxDr13H9j8/SZ3BnANArAl7YfTB1ZDKf7bagcDcmkB8rV/fHbPUgn3ce5EO6oBPHvNC/39spVu2qiVx2v/3OxTlG6qyAvm0V7D6Lclldll1JYW98hv/U/xjzm4VdEOgDAS/sNlEU7ua7S4OfEvaLWD3h9uxyPIT5qT+gzHPBtFpe0LEP9HcbHaQAfqY1qJYX55TVYlR9XP32cuRf83XVg2D3MWlV77M017GiF+iUgBd2G0gJ8fJEuHs89oebrAUIVgaVZ1ItQ96ZpijuXBDHuwt9/d5GEbx/qgTw/N0syii5A4ORGPPq3ZhHPK/nEb1/UGJ6gHQEva/tkkBXBLyw3WTxIE3oJ1oja1BWQrgrQCBcWxVW1LkgtrUa2/3eRieVAJ5vm8b+IeRlBPOSsa7efV3PISLcvRvKB445T4TRMf+plG0AOiDghe0GUR7OkidC3RcFhLuzanl7tgkiIVaFfRQYjPs84Hb/wfTN7rRhk4dyW/psBuxkhP3cag5xPtQvUH/2ef32vH7d2EWBNgl4Id+7SribOzCLlbuLkQcIsXrPik0eCww+qcs7ymN+VXvdtu33dprpm9myz1ZLnaG6GOkc4nboXySt5o26vKd2U6AtAl7ImzDGZHGqJbIHZncF7A/q7fItD6v91eUdFeHuMPpmF97YxST12Y5vhtTfnVTjKhkXc4dnY5tDpNq8zysPYANaIOCFzQOomCzOtMRGow933Z7NFiLkvRbyjsZV5Xb/IZyrXXjjqX2245yh+HVE32XUz+1Ic6Pj9D0BGiPghe9PGGNSP9MSWc7HHu5WVvCxPQ9fg+b7Zxdi2Qc1eRlKnzeplvV3x6CIhzILeYE2CHjh24OnmCxaDZTnNN2CNNZ9QbjLU8yEvNBY/xzn6ZmWYE+EvAzBWMLdz2kOUUT5gvQ9hbxAYwS88PiEMSaLApk8wl3YLEJeoQHs/1x9pSXYsyNjQHpuLOUZRv/cjq+thbxq8gJ7J+CFxyeMBvZ5zoW7kG1aWRkGztUMwYk7L+hp33c0knHpeWnh7oqQF2iKgBf+OWiyGijPTT1AeT3ifUG4SxPc/gv7OVcL32jazIMy6aExrN69HfMcIkcKt1/YnYF9EvDC3yeMEegJXjaLcPd0xPuCcJcmCafg6edqaEM8KHOqGeiRoe+PD3V3bcaHkHdev51rCWBfBLxQCXe3JNyFp3P7L+zWP187V9Oyd+66oCd94GQE49NiHqqWo/SVzMB+CXgxWDJh3MbdmMPd5LoS7tKOmZAXtvJO/0wHVhd+oWsnA//883oecWszAjRDwEvRrNbcStSKOh75/nA9gsEzwxIh75lmgI3982U1/FuTGa6jeh/0jAa69vPAP7/SDAAN+kETUPBkUbib7yHcHfMtVelBKjObuhOL9PqWSXqN1VW9/32uj68buwI82j/HhbcLLUHHzup98bdUNxO6MB3wZ48SbwubEKA5Al5K5lb8PCWEux561ZyYCMeA/o9qLch9ygQ5ba+4QDNJrx/T++rfD1GEvHfpqcrAl+N9on+mR6Ie7zM1ROmgL5xWwy4n98pWBGiWgJdSB0luxc/z8KTbkYe7MVh+Z1PvZV+JcPJDer9raqXG90LQtD0j6I2J0E/pz5MBtN/DHQWCA/gHNfLpW18d++QLTUHLhrwoxepdgBYIeClOCndnWmKjCJmOC1hRGPvDxObeaf+YV8tAd96X/SSFo/P0Wh3zsX2n1bJ23bTH23tVNua53QvU3aW3TqJsiIdF0bIh19+1ehegBQJeSpwszrTERkWEu+nhVlZy51vUr5jQvh3SvpFWjdyk16rEw7R+/Vr1b0XMw4N86s98bnej8PN1HJvq7tJXUVZn7o4L2hwfDPRz31q9C9AOAS8lTRZnJovZXhQQ7goP8sSg/G01otvr0r4dr9dpdW+E/H0Ke+NBPr976BqFU3d3f1YldKIP/2Ptn1d94jzznLkqlXGw1l/+tPbPJZXSmKQxhItxtDFmXT13YIje2oIA7RDwUsrAaGaymO20kCdEq+v4/TAgVuq+GXvQn0Lr19WXsPdltVzl3/W+sVodtrA7UuA5+7LyENSn9N9xDv89vd/tY5XpI+eC229su2m1DKJWNdCnI27ruBj31sMxacFQ+8PPSpkAtEfASwkTxVidJ9zNc1rCqsFUmkF48E+Lalkn7bbE205TmBqrsc7TRaFY1Tvt6OOsHv6nHi+lnbMnlbsrthUBSi/qoT92gXitLM6qDvqYLq5e1a9juyANmw70cwt3AVok4GXsE8WYVAh385QS7goP/ikm5K8KWbmdJR0LN2k1WgS9sw4+RtTjvaw/y6UtQkGcs/NEcPJbNYALcutlcdbGZqu+degXW6dxQVBJHRr240A/9282HUB7/k8TMFZpAhFPpHcb/mavC5qcXNkn/hLbPB6mdyzcfVy0S/06rf/4LLVX2y5SyAwlnLdn1bhv6X+qRbW8y+JZ3S9FrfybId5tEYFv/Ypxx/PUt8adE0Muc3CRaqRCUyYDHUNZwQvQIgEvY50kxkBIuJsnJojnhewXERyc2OQPK3afR3Ap2M2epCw6DHqvhQcU0D/HPn6lJR4V4Wf01xHsXo6pNnfqW9fD3giwh/b9Ysx5ZjelQUNc6W58CdAyJRoY6yQxalcKRDa7SaFVKUq/9TcG270rxZDqZEdtxpNq8yqV1WePVWu/V2tPh28j9Ei/47T+zK/S/jRtMTy41GUxYmfO2//w0N+UciEu9a/Rz12m88LLajgrul/Wn/l1ifXracUQ+8YPNhtAuwS8jEoKd2PlrgdobVZUuJtu/Z0Uuq1jwnne1zIc6Ra+eJ2n0ipRl/FbYe/6ZP/kq228Cns/pPe7pkLf9Pcep1Xh1y3sW3EL8K2ntTPS/jmOn5daYhh9dpvnhbW6+bOef+QYf7oQR1P94xAZrwC0TIkGxjQAEu5uN+g6L+w7l/pgtXiozbOhBAWpNmMEG3GrbtyyG587d0VU9AHTtK1jFf+nul+IV5Q4OGmizEGq0bu6rbjplVsePsWY+2erdwfYZ7dwTlh0XAd9Gy+V06EBkwHPNQBokYCXMYnafcLdvAHXcUm3ERa6eje28/MUlg5yW6ewdzWx37UuY2z32P4R+P5Z7wvvYn/Y9yQ86mJWy0B63mCTHNWfW51HxtY/r47R0i3Sufncbf6P9rFDCHpXq3jBMTuiWuEAQyHgZSwTxGsTxCzFhbtJaat3o87u87Hczh/7a3qwUEzsY4L/lElDlHWI/mIV9p7s8XNGAHFcLVfHN3WMeVo7+ufxuamWF+TmAx+LTevX+9S3nqUSNvs+H6wHvX1sL6t42TcPWAMgi4CXwRPuZovAqbhwt7DVu6tVu5dj/YJx2/IeSyJEuBtBRIS9l/uqcxdPhK+Wq3mbCNgjOBCIMZb+eVL4+Tv6sHiI2ukYzs0poH6RvlfcVRVh7/9S6HuZaqzv63etLqjFa9GjZjiovqoPD3vYpwBgIwEvQ58cnlXC3dxJ5HGht32WEobdpG1cRM2zFGJH0Pt6T5On2E9W9XqP9vD5InyIkPdVA1//bMAPXYES++fvnZdvRtY3f04rbE+rLxfhpmlbf1yvi76n3zevlhfUXtmvoTc+aAKA9gl4Gay0MvNKS2RPIu8K3EdiUjkpYPuOZgXYDkFClEOIFVz72r+jX/mYVpxN9/AZL9Pn2/e20fcx9P55UpV7gXZ1t8Voz8spuH6s71tt99XdE1dPvai2KuNTNXfnxLYm+yz/AwCQQ8DLUCeGMTnwRPnNig13k5cj/36LaoQrwHaY3M8bWC07rZa3F79/6mrZtRVm+zwOT5qobwktKnWV46oW/qKAvvnhu1bfLqGweihZXFT7mMZ2T/p9Dd45sa1fHeIAQJsEvAxOCjWEu3lOSw13Uyg35hU082rkK8B2mNxfVvuvxxj9zeqW4oMnfLZF+mw3e/xsbgOmTYvU76xesS9HkPZ2h/651DqlxT3oNJ2jci5wxSre67Wa6E/pb5s4F2zrRCkdAKBNP2gChiTdxvdOS2SJcPe24O8/5vDgJtU45J8T+3ndT0SYcL3nfWCWJuyv0kPUdvlsD+U06r/jj2o/4Ww8sX6aVgjDU0T4Fvvnh6/+edHQStM4ng4KbOMia+HHd677qjhnvc/Y7qua6C/r/+dN/f56lzZr8Fyw7X5+qXuhQMYlAB0Q8DIYKdzNmRywDHdvCm+DsZZnON81YCwpTKjfXsQqsGq/q1yj74l6kb9WT1gdH6vL6r9jUe3nToQLEym2cJdef6T9ZtFRqYCXhbV7tHGpDzpd9Xt3db93vMU47slBb4PnglxxrrjU7VCgI2MTgPYp0cAgpFv1hLt5ig9308WAyUi3rXA3f3IfE+smVjrH/vUxhQa7frY4Rvfx8LWpWrx8w6JallGIBxFGOZd/RX3S9EDGy1S7etFB/3xSjf/hl+seQsaSw921fu8u7Y/bWAW9n3at0ZvOBS+q/T/schMPW6NU5msAHRDw0nvC3a3cWLn7YIwPN7Eqe7eJfbTZ84Ym9hfpwUCTHT/bvNpPyOthPoRFtQx046LGs3r/epbC3Nc9q9Vd2v56qlb6P/rkXS5UxhjwOvW50x1+723VTV3eX2x1AKANAl56bS3cPdIaG6nL+sXYVswId59g7UnuTYS8q9W8sw4/28zDfIq1WhH5fC3Qvemo7ELuOb2kFY2vCq+F/812qXYPWh/KddX70tW2D2Lb4oFvxiMAwOAIeOk74W4e4e6XAGFs5RmEu3vQcMi7Wll23eFne2krFyMCw+jv/5NKLrwe0ArRWUHbaZ5KA/DPPu9z9fTyOWfV8uLadIffHf1tW8fMgTINFOhHTQDQPgEvvZXCEuFu3iRSuPvFdETfRbi7Rw2HvGGWbh8+6OCzzXb5vQzGolqu1I1Vui/SKt0h1nQtpTzDPgLMsffH82pZUuQpJlVazbvl7/4cF0f28PtzKdNAaSaaAKB9Al56KYW7My2xUYRCLzTDKCdSwt0GtBDyxkWpT2kleZufrbRb30sRfcBxKr/wuq+lFzLP65OqnIu2r4a8rVp0vqe++GyXeujp4ngb51l9M08xH+BntkAHoAMCXvo4CRTu5rlLE//PmuJvpiMJB25symakILXJCyMPtcN3uS13x6fMryjTMA7Rp0eN0v+kmrrzkXyvUkKuuKvmtd04q7+Lff3Nnv66VT30ky0/Qxsh78EuF/1gwA7cVQTQPgEvvZIeVDTTEhsJdx/ff6Yj+Bq3m+o2eqDW06XQrMlbqGNi826Xh6+lcH+Xz3YkRBi0RbVcuR/B7uUI+/dSyjOc25W3EmH4vvb1Vb97tmWf20bI+6tNzY6Gei4wHgFomYCX3khByLWWyBrovRDuPmo68M8fwf1p5j7AE6UgtemVdtdPCHl3+WxChOFZVMtg99lYV+4XVJ7hZkAPvOtLP7zPVbwrV9s+9DKFvLfGJ/TwGBlqnyLgBWiZgJe+TP5mlXA3x8PTn9X2+6afB75tT3OCe+H+XidOsdqu6cnTriFvfLZtAwe1Hod1zL8ac7Bb2H4Z29Pq3d00caFtl4denjZ4PjhyyzrG5AA0ScBL59ItxcLdvMnjsdVB359ADfizv7JtO9PkQ9dWdgp5q+0Dh8kutX9pXQRazzaVYxmRXwr4jm9cfNtNarebhsYE73OD1fQ5jqvmQt6prc2O5gP8zPZ3gJYJeOlUCnffa4kswt3v70uTall/b4huPZSnO2lSf9rCr9o65F37bNsER7/Yqr2epD+P1dmlhIEpXBv7RD+2pT78ad429PfuEvK+qJq56GdFI0/pY4bGwwUBWibgpctJ3yrcdcvaZqfC3Y0mAx60n9p83aqPryiF0EZAs0vIe7flPmIFbz+P8wh1S7xQNy3gO95YvfvkPnheLetRN2EV8h5lfpb4HMeOBXrk94F+bs8FAGiRgJdOpJUUwt08pwXUZyx54vRKMNCfbVG1s0pml5B3mwA6Vs1Mbc7eiG33rOBV+iWsWnxjN9/bsdKUo9T35q7k3fbCWu5ngF0M9cKgC84ALRLw0jrh7laEu/l+HOBnnivN0B8tlmoIVzvcuvhqi0meMg3dW63afVH4RZzpyL/fjQef7s3bhv/+bcs1xPhrr+doF9/Y0VAD3ol9HqA9Al5atRbuWsWw2Svh7naDyCFuY5utX9JK2XkLv+qhL0y1o3M/2zYBtFUz3U/Gj0u/gJPO+WM/37+1u++t/43jpumLIduGvOfVfsO1qS3NDsfGohpmHd6gTANASwS8tO1dJdzNcVPQ09X3OWkb2jae22y91NYq3ggY3uUGDWmSF0FDzoWByTbhMfs9tisPxVyZjvz7LfTje3fbwu/Y9gG/+3zo2k82MTsa6jllts04B4DdCXhpTX1yv66sXMgKB+oJo4dubW9og0erd3sqrZS5aenXPdSF3PLzXWZO9KzibV+U1TlVV/tv+/eYWb27fx/a2jfTuDT3nHDqmKCQY6MJZzYfQPMEvLQiDaJnWmIj4e5u+9dkgNt5Ycv1WpsB/Em9D287+cnpJ362GVsTge5zZXWK2wdt7/2bt/i7YmXhZc4Pbvmgy++Z2MQM4NjYt5dW8QI0T8BL4+oT+lUl3M1xJ9wtZsJk9W7PtbyKN2z10LXMUg1TW7KdvrtahrtKMpS1D965UNdY39vmCviLuu89yfxse6nH66FT7HhszAf88SPctYoXoGECXhpVD2JnTujZAcGxZijCrVBgMNoO4t9tucIlVpN9b1862CY0Zve+2zH96Pl/7Pve3FZu9Lhq0/UW++s+LsRPbGIK7Hes4gVomICXJid3s2rL2pKFBwRqNpbhjSYYhg5W8cak/2qLzxd9xqYQWsDbnFt998b9eczU321O27VGI3S6zgmftnjQZcnHBuM5NvZ9nF3ZhADNEfDSCOFutoWAYC+mQ9nenrg+OG2HOLPc24VDqvn6vX1KHd5mRB3tF/ru7xrzxYXPSnI06q6j/TUrfNriQZff8pNNzI5uB/75Z0qU/GPObFUzsDcCXpo4UWUPkgsXwYCAoCxW7w5MCuS7uF14mwH/91aTWcG7fx6GmWfMFxfmNm+jFh393m0usJ0/4fcIdNh1THLX4fHR1Rhn7MyZgb35QROwTyncfW/wulGEusdWABXnRhMMUqzibTMojf7zosoMECKErvveefX4SnYB756PYeFutsmIv9vG26TTeMhYaHgifNr4AL3U70Yd9F2eMzHVzDzBbTXs55vEuSFCzeLPpXUfEttxZpcG9kXAyz5PUsLdPMLdQgfkVmsP1k3V/gqLs7pPfbtFPxETpU/f6JunSoPsZz8Q7m49iR+rnOMyylS5wDI8B2nb5Tz4Nu6emBn30rK46Dz0B1jHavkPqcxUqfPmk8rqXWDPlGhgX/5dv94Z5GZ5Idwt0m+aYJhSMN9F3bttHri2qL69QnxiKz5Z9NnnmiF74no08j5hvuH7x1hIuDtc07SyLufccO4YoeX+ZwxlGh7GOKUeB+l7e1YNsHcCXvblTIiQZVF18/AQujfXBIPWRUA/TQ+szPWtB8Lpm5/u3Ar8rYz5Ym9OXy68G76Luv/d2HemFYh3jhFadjuC7xDHwPvS6vG64xVokoAX2hWTBVdsy7Oxnh+9N+/o917k/mBaVfjY5/zZ5qNl0xF/t0Xh378UEb7k3kVxvuPfD7t6M6LjrJiQV7gLNE3AC+07ybn1j1FRnmHgUkDfxer7yZb9xavH/g5bEPbmj4yf+UkzjWa8dpJxfphX218EtMqbp45J5iP5Og+h59hD3ngeQiXcBRom4IVuXKi/tld9L3sxt4lGoavteJE78UlBw+Krfz2x6WjZT4X3A4658chdxesBjLTt7Yi+y6hD3lRuS7gLNE7AC914eEpzaXWnGtTr2pibHsjDYHzosL+YbfHzbx6ZXExsPlreZ0s+37iAOx5xF8Vlxnl+UX37QZfQxNjypu/j3y1Fv/lpbAtg6u8TpfmU5wNaIeCFbgcyV5ph9DxUbzzmHf7ul1v87M0j/25i89Gi0Qa86Qn235vMC3fH52XmRbJXW/ydaqOzD29G9n1WNXlnQ/8icS6oXx+r7S7QAzyJgBe6Ncup78ZGfV7BIOAdifv7+9jPFh39+knuhCd9zpuv/39bkBaVHHK6M2ec23TjAy+t4qUDr6txreJdHW9xl+Ng73RMz054X7mbA2iZgBe6d+326afZtKKqY7/bQqPS5b62zSrerx/sp4+Bp5tn/IwJ/TjNGljFC08d/z52QXc0x1z9+pgeTjYI8VnTqt24Q9PFPqB1Al7oXgwA3mmG0bKCd1y6DOyPcic69aTvtuputTGUfk5nnKzipY/ejPi7TaplyYZ3fV4ME58t1dq1ahfolIAX+uEo5yEefNe8p59rYdOMSteB/a9b/Ozt2p9/tOloaaI71QqM1Cxz/7aKl9akiwqvR/41o5zdp1S2YdKj891RCnY/VWrtAj0g4IX+uDAxfpJe1iBLA2/sZ/sy26Im3du1P09sOniynP7cxZRx21gqJ53355qKFr2qxleL99ExUPUl6O1kzhRjsHgmQv2K1boeogb0ioAX+uXdUB8o0AN9rHW7sFlGpw8lN7IezJhqU3+2yWBv/sj4mYlmGrUTtXjpm1SL901BX3lWLUs3RNh7Fitpm/xla6FulNT7s37Fqt2pPQ/omx80AfTKqh7vsabYWh9r3S5slvFNouoBftcfI1aQ3WT+7G1ldQnAPkUt3tMN54p5fa6IMcBEc9GSKNPwa2H7XHzXeKBZlY63ef36EHOCpzyAOQXG8fqpWga56uoCgyDghf6JJ7Ce1QOT15rir4FWTnsstBSFiJpvk8zyH79VAl6AfYqVfK8y+uBYxXutuWhDugB9XpX74OZJGu/M0twh3lZ3MsWx+r07MH5e+zsm9iZgqAS80E9X9cBk/pSrzyOzsaZhtFUPVlZ+ze3x4zSvur81L8o0vM78rFXlVkKAfYo7Kc43/EzcQRGrC5XeohX1WPg25g/O+X+x8hYoihq80F/q8W4/QJv37HP/btPRkF8yJ3txkcGFIoD92vjAy9T/3mqq7tTb6H/162M8EKt+XaY6qmMP/aJ8iAUGAAUS8EJ/TapUV4qHQfo048cEWZRiusUFoLnmAtir6H9zHnj5RlN1LgLdGENG7eQomfExBb8R+sYdcydjWlCRSofY7wAKJOCFfouVBjPN8NcAfZMPmomCTDN/znEBsH8Xm34gldpaaKrenkPPqmXN2j/TSt/LMazwrfe7y8qiB4DiCHih/64KuJ0sx08ZPzPXTBTkl8yfM8kD2L9J5t1FVlMOQ4y1I7SPoPdTWt075PH3i0qpBoCiCHih/+K2MU9hzlitqN4ojolHj4uFSR5AI37N+Bl1eIdnUi1X935MK3vPhlbGIZ37z21KgHIIeGEYjmIlQemD7boNJhk/N+/RZ/63XZceHBN9Oy5gqH7M+JmFZirKScbD1hb64GGPwavlMzFiVe/1FufdztX73k39dmMTApRBwAvDEasHTgr97qtVudOMn33bs0kB4zMZ4D721maDVo79PzRTUXIftqYPHse2nlXLoPddZnmOPjiv3N0GUAQBLwzL9Zie9LuF/6b3jTVH0wNN3I5OkyY9+iy5Ae/cZgNoRE499K/LNAjchi1C/ff1mPx93+v0pvJlp8bGAOMn4IVhiXD3XcHff5r5c+rdUYqft5jgAc1zrJUnp0xD7BfztX/1X832NHWbXtavf61e9b96Xr+O0ytWrb6qluUJ5g0elzEu/dj30g1p8cOpvQZg3AS8MDzTehB5Weh3P8gsU/FbX7aV3XVcerhSRxkQ6FefbmVmmYY0NhmlCDHr1zy9XqcA+LR+Hdev/9Q/8qx+vaiWwe98z79+Vi2D3sset08sfhDyAoyYgBeG6WJAtb/2beOKxTSItYqKJvStRMpBoWVb6C8BJyXatkzDQpO1Kx52F+PDFPwep1W/sdr39Z76rYM0Pv/U1zG6h64BjJuAF4arpHq86wPv3AfN9WIAW3AQP1Z93J5W8dIbYy8HsmkVf6wetBcUKadMw2JtPLPQZL3or2K173n9ivIOscJ3Hw8km1TL+rxXfRynx6rmSsgLMEoCXhiuGEBeF/Jd1wODSWaZhjc9+exWV47Lv3v4mQS80K8+3R0kZcoZm8ztI/2UVvi+TmFvvG6euJ3OqmXQe9TD7yrkBRghAS8MfDJRDxzPCvzeG2+FTCtl5j34rMK3cenj9nQRgb4Zc3g1zfgZZSrKlFOm4bc0RrGP9Fiq5xsh6GpV7+IJY4aPfRyrC3kBxkfAC8N30cfVAXsehM6/+lcnmbe9ve3Bx//ZLjoq0x5+pp9sFnpmzOFVzir+D3YB54fM8Qz9Hn9+Tqt6I+iNQHSx418V5Rp6V1pNyAswLgJeGL4YLF4X9qCl+K4bb4VMD5NYdPxZreAdiR5fSLGCF/rVpy80U5njscy6+6801fDEmHIt6N3lLoVZtSzZIOQFoBE/aAIYzYTzKg06x+ruq4n1y8wBaaziveh4wjdJJSMYtqkmgOz+eqzHS873mlf9KBFE+yYZP/NaMw1XBL31uO62WtbY3XZ8GePYT/X/f9ynMh0R8tafKf44s4UBhkvAC+Mxqwdnv9WDtNuRfr+vV0scxYrKjAFyTKQiDO5yxUQEAjd20cHra7mNqU1Dz/x3zF9u07knXdA7thvwjf3DA9bGsQ0v674gxnbXW56HYzwaK3lf9KlkRwp5P1TlPMAZYHSUaIBxiVINk5F+t8cm0y8zB+FvOv7s6vCOw1QTwM799ZgovQM8XMypX3ExJx7Etk1wvwp5Zz37Pjf124tq3A/KBBgtAS+MSwwY3430uz22ImyWGWi/7niwemLXHLZUV1GtW8gz9nDARTvgL/Egtmq5an/bi1vXPQx5b3f8LgB0TMAL4xOlCy5H+L3m3/j3Q1jFe9DjB3SR5xdNANkBwXzkX3FqKwNf9Xt39et5tX2N5T6GvBHuRsh7a8sCDIeAF8bpIvNJzkOy+Ma/n2U+kbjrVby/2i0HzSps2M6YV/FOXLQDHnN/fx/lGk637AMj5D3p2ff4XL+iXMO5rQowDAJeGK93mcHnUAbMi28MluM7nuUMVDsepAoIByoFORMtAVsZ++29U5sY+MaY86ZaroDdNuQ96uF3iQUSzyslGwB6T8AL4zXGerzfGly+zAmz04C7qwGqFV/D9VITwN7667FwVwbwvTFn9IHbBKOrB69N+vhdUvmJV7bs3nmgHbA3Al4Yt2k9UDwb0ff58J1B8UXm39HlKl5B4cCkCwdWX8P2/hj59zsa010ywP6lu8+2eWDZw+KMvvYt9fe5rJah9dzW3Yub+vVMMwD7IuCF8bsa0crR7w2Qz3JWPaSH/7zu6POfCAQG5yRNuID99ddj6h8AvjfujBWa24S8MWa/7vH3idW88X22rTPMFzEXeV6342naPwD2QsALZRhLPd5Ng+OrzL8nbjFbdPD5rQYdngtNADuFAPMCvqa7MoCc/nDbkDcWBFz2/DvdVMvVpzGmFlLmibnHiwjIUwkPgL0S8EIZJlWPVwNsMZhcVN8PZmNAPM0caJ929DUEhgOR9qWJloCdjX0Ce9THeplAL8ew24a8Fzlj2q6/01rZhhtb+Zti7hKrdZ/Vr1vNATRFwAvliPBzNoLvMd/w37OC7A5LNcTD1qziHQZhPDTbX4+BVbxAlrWQN3fF6/UQ7sCLBRhRbqBarui9saX/EmH+KtjVLkDjBLyMiRPnZmOox/thw3+fbHFb26uqmxVmAoGeS6tmpgP5uAtbjJ76vYDvOLOZgVxbhryTakB34K0Fvf+pyi7dEKt0owzDc8Eu0CYBL2NxmgYUrzXFdx1Uwy/VMM/4mZeZD1xblWpoewA67fttdwxq9e7C5mLA/fXgz6sjuTsGaEmqv5pbKuxkaHd+rUo31K//pO9ZwrkgxmIRasdq3ReF1KEHekbAyxicrl0d7erhWUMSNQOvhvrhM+rwPky4q/xSDTHIPu/gq1zbFfsphTVTLQGt9NdjoJwLsG3/GKs8cxemXA/1YckxR4uHilVfHsg2pnNCLBCJOehxKsNwmc57AJ0Q8DJ06+Fu1w/PGpKzgdeBnWf8TKySPcsdfFbtl/iYWPXVP2kCNbSwxpOYGXp/PXT6c2Br9fjzPLOPHOLY5OvvukgBaAS98VC2rsqkPdWiWgbzEer+J+4gtVoX6AsBL0N2/lhdo3SSfaV5Nroe8NO/f8v8uYvcmsOpxEfbA7Sroa7IGLG4KDC04+K/Nhs99qGQ72kVL7CL3FJhZyN4jsZqzH2Xwt4Iep+lNog53aKHH3eRPtvDQ+TSSt1zoS7QRwJehipu93n9nYHDZWVV2yaDrcebbmtr4ju+aHm/GfyKjDFJE6chbg+TDPrstpDvOcm9awRgbUy7qPLvPrwa4/dPZRxO0+reZ2k8/iqNbxYtfpy7dM56lT7DKtA9TZ9xYY8F+uwHTcAA3aTVlpvEz7yvliEaj4syBpcpEB9iaJBTZuKh5nC6DW7TIPNz/bMxoPvY4n4TKzLeplrAdGuodZE/23T0ePIe/Wr0b0cFfN24a+QmlYsC9ixdiP3W+OxuqMdeLFyov1vOuPbhIb1jXj26Vrv99qttP03bfnUu+WltXzjYcI65+2qsFP/83/TvHv6bcTgwBgJehiY33H24/aceDMQV2CvNtnFCOh/gYPG3Ki/gDRGi/v5YSY/HBpb1z8bDINq8OBDB4nO7YqeTxstqoAGUSQkD6a9LCHgP0pjDswDgaefkOJam9evn1Hcc5YzJ6v8v3uKcuKiW5WHmAzpHnqfvvOl7xpjxWWn7xNo85XaE3+1fjnptCvugRANDkh3urnXuUcZhruk2GuLTebcd4F1tUY83JgMR8ra1EuRhlbHdsLOJ5FBLM6wmsjC2/nrIZmmlGbDdufihzEn9iruo/qxf76plXfw4nrYZo8Y5PRYAxLjqY/33/Vm/rvv+cOG0cvVNxo96qCMAjxLwMhR324a7a+KWe7dLbhgsVgO7PT3dhrdNaPBQjzc3yO4g5D0TCnQyoTxIk8jB9o22IgPor1cr6kpx7QGakH0ejrIDcR7+VC1D2X2v9o9jcRbn+hT2Xvb1IcOpZFpOX/nSngPA1wS8DMEqaNt1sBQBndslNzsZ4ANi3m758zFpeLfFvtN2yPtOKNC6uLAxGfDn/90mZCBKWsU7qYZb0xtakYLdKIcVr7ZW164ebvsprert4/n/PONnjiwKAOBrAl767iFge+pDE+LhBfXbjebcKLuMQR+k7brtvhETiustfkebIe9BmujQzuTyqsVJZVPmtiQD8baw7zvEi6bQxrl3shbsTjv8KLNqWcLhsodj25xz+4W9CYB1Al76bC/h7pq4Ir7QrBsN7dbSm10G9dsM6FsOeY+2CaDZeYIZE7vBhy8esMbA9tXSzsFXVtnB3869MfaKUgx9OS4eVvRG3d+eLXB4lfEz076WmgCgGwJe+iomgfsMd5VqyBcD3CE98GvXVWEX2zykYi3kbSNQm1n51egEM1btjiFEv7U1GZi3BX7nd0O6MwYaOu8epFW7fV11Gsfox76Mveox5zxzvKkWLwB/+ZcmaGwg0/VtR0MWQexxUyvT0uoBtzVt9iLdJjb24+20/p4320xSquVthW1M2Lf6bGRtv6O0/cZQ6/i83j9ed9iW/yto1zlOE26ets9MquXqPeMaVvtEXFAu6YJmcX3JAM+7N+n8+rnjdptVmy9Gf64/53/0JMDA5ubzuu861lL7ZwUvxU2C0hNqTbI2ux7QrV9vn/g9Z1vsPzGYfl61U9N5q8/G6CaZm8xtVYak7jsXhe63DxcGreT9R58ck7+Swt3PBYa7JwM8787S8drpZ04X+Beb+hbjRABWBLz0auBbtbfC5bRqp57q0Cek7wYSGuQMgr9n6yC1/p2nVTslP4S8+5lkji3cXVgNyEC9LfR7C3n/3icPZoyxR/PCtvEsbeMhnnePqh6EvJn95S96FACCgJe+aPX2xfR7Xmn2zQPcdPtkCaHBLiHvTf0Wq3kXDX83Ie/TJ5ljCneD+rsMUuo3S73Augp5p4X3yQcj7JNz/FbQNh5Drfs+hLw3GT9zMrCHIwPQEAEvfXHa9mq0VLtyruk3OhvIZPT1HkKDXULe2G/bKNlw7cFrO00yZ2mSObbJzwdblwF7U/B3X4W8s4LbIPrkElcyF3FhLq1Svx7J1+n0u6SyNjn7zYnTCgACXvrgtMOHeb2olGrI8a7vqwPSwzD2sR9FkHq97e9OJRua3p+utv1sJUttNcb2+jyUByDCN9xoguW5prSVd6lfLjGMuu36oV0tbd8xrs4+SQ9o7krOyu+fdakACHjp2mm6XbMTabB9ajNsNJRaefsquzHbZeKdQrdnVbOrdOKzvXc73vcnmClEmI30K97YygxZWpVmP172UR9LKNmQ+uWPI+6XNyml9vRQa+5uctHhcWoFLwBZBLx0qdNwd22ieWuimWXa9xIBew4NYhL6foeQN1ZXxkre46q52rzTFAp4WM8jIUK1XD005hDhrS3NCKiDvzRJ55rRruZN56oId0s9ZxVx10UaI05H/BU7OUYz71A7KL22NwACXrpz3odwd/3zVM0/KGsMrgYQKu4zNIjv+mmX71zv3/P69Sx9niZuy4xQ4KO6vP8IEd6PPES4a7teOTRhi9qSpZil882o+vR0a/vHdM4q1c3Yv2C9nWP7Xoz8a3b5HXPKNEx1owBlE/DSyUA3PeCsTxNNpRry9boebwoN9rl/xXfdOUitP09Mbp/t+TOtu0olG0qePK+e2D32cDeU/HAq7M9jd5D69E9DfwhbrCZMJRkubNYi9vOrapylGb521tF4a57xM+rwAhROwEvbbtLDqHonVlxWbhnNEQPbvj+4qolVszHp3incTmUbYpV4BL03DXzfaVXwat76e8fEcqx1/9bt60GC0Kfz7lxLPH6erfu2P2MF7JAu4KVgNy62lXDBLcc8XXge8zk4xiAl1YBtfQyc9qFN+5HjDaBwAl7a1Ntwd20AdVm/uf15s5M+ry5KK7KbWDETE5idH4gTA/R0DDRRumG18utjKXXYoiRDWiFWSrB9U8JT2CnOuSb4br8eK2A/pQuMs77eQZM+2yrYndp0fylh4UBpq7SnHZUrm2/qLzybAaBsAl7a0vtwd018TiHKZn2vxxslERYN/L2TavlAnMtd/4IU9Mb/H0Hvvus/H1VfHtgzGevOt1bXsaTJjNvZGZ1UU/pGS2wUFxhj5eCfa2Fvp318lMZJ55o/02eb2kx/s0ir1EcrjQNL3O4vO/idHzLHgAAUSsBLG+4GFO6uJptKNWx2UPW4VENa6djkdrx46mrZVLrhdXoY23G1DDn2dXFhVi1XfY0q6F1btVvaiqGbsd/mS9Gcc7ezCns/pXq90c+fpfIIjazwjb83/f2Xqe77/6plaZxZVUbtVfv1414Wum27WE2fc4fhxGEHUK5/aYJmpNvUplriYTByPMTbim3DbK9TfdmSt2OsFn61j/08TRhi8v5Ltd+adjf16+1QVxOldolSDKU+sOdZ3wLeFPCU4njsK/F6sD9dVh7ItS+f0/gr3n9P/25R5d8tsjpn/lgtA6NYFSjE3c4iXbwd8zEb+8SngveN87YfGp1x3o2az8cOP6Dj88OfG84N+qqG/KAJaNBgw93kReED11yxauhDvZ37+vCnCJ8/Nt0G1XI1Rwz2b57yF6XjJf6OmzR5ion2L+l98oS/epY+YxyXcav/7VCOzVTv+aIqd2WK1buUIIKSl865e7E6d4QTzdGJElbvnhR+vP6a+q02zavvL1qYOPSAnoxDvueDJmqGEg00Zejh7ipoO7Ups/S2DECLJTcOUjvs7SFnqYRDBLGnaSXQ82oZWN9Uu9ftjZVYX9dx7OtDe1ZPY78ufNLi9nVGL51zPXCNMVg89WLvQPxS+HY+6mDsu2nsN3H4AR3P3/RDHRLw0tTg43gMT3tPq1JvbNKNel2Pt2rugWuPDvir5UPO3u8r6F3bH+9Szd5V4Pufalm791XaT+fVdjV81x/aE8H0VXpoTqcn5vj9nsb+Zd+1epdSpFBsriUYuFIWB0xt6tbb4I+MMZQHrQFdyplH3mmmZijRwL5FuPRiDOHumvPq6bfHFzHIjRqK9ba/7GFo8Ln+bDHhet/yoD/aZF4t6/POm/he1TIMmT8ywF9NOiJ8/3qw/++1f7deo7FK/z5WpbReFiB95rjlceZw+mvbWL1LadooqwNNmZdQrzudr5VTqaqfq3YXguSEIrYL0GkmkDnHoQECXvYpDtTjdEv8aHQUDg7VRQSafZzcxGeqP1us5D3r4CTXaND7re+79o+3fd5p0kTxorIa6GuvRnaxDHL6rru6T3hVeeAaw1TK6l2rRLtph5wxgYAX6NJPW85T2SMlGtjngGN04e5XnZCVdHmu+1rTNW3DRUe/e1otSzd86nPd27bE90/tEA8yVIrhn+7afjo39Oice1m5fY/hKamkzk8294O2A95FDz8TwNdz3qf2Y+xIwMu+vBlruGvCubVJ1dN6vGk15IuetE8Evdel1UpLD057+P6Vh6d9jwc84hiA4YgJa0kLAZy7v4xrWhvHqckPDKA/3LSIaa6lmiPghe0nnG6Z3iwe1HXWxw+WLkT04UntcfKb1a+PaVXv5VifOhon+/QAt9Vq3VnlFsLveT32C2aQ2Ve7c4ahOC+spI5Von8fzwGQd0fm75qpOQJeMOFsylVfV6emW9/nPfpIk2pZb/JTCnuvhr6yN63UXYW68cCks8qKnxwLfQz81VdfVlZ60H+39b56W9h3Fmr+fQzXJ/+2SYCO/JpzztRMzfGQNdh+wvn68PDwl0rN0BxRguC4p6taolTDxx4OzOPzRBh6VrddtNu8fn2olk/m7u2qzhRIxzERT5Q+sevvvl96sBr8o6+OC0UCJfoo+mvlRMrW9jhyseF3Wl0NdDEXnGT0PwulZpol4AUTziZFJ3/Vx8lPhGj1iWgV8vZV7F8n6VWlwDdC3g/p/a6Lk2QKc1cn8Qh0p3b1vXilNAN8s69+rzXo43jQRTlatqjcEQX0zyzjZ6zebZiAF3afcEZo+U5rbO7s67b6rY+3L0aYlrbj9UDaMgLfabUWqNafP97m1XIV0e/pfRUS7nSVNF2BXU0eVr/r5/T7rQxpxjzdjg78s6+e1/1SlC650Br0SNRLn2sGAMgqz/BWMzVLwAu7Tzhv6wlnhJZuR98sSjXc9fGWjPoz3dSfLcLL2YDbd5re/7EvpgB4ZT38XZfzxFOaE8fFC80A3+2r40GUPznn0hMxpjnXDACUrh6fxTx6smm+407F5gl44Wli9edR5VapTSI8jNXOz/v44eqTzWlatTotYDtM7Y69EqG7W3wh/5w7qdxJQPf99rFmoCPmHEDf5NxhpTxDC/5PE8DuUijj4Rp5jg4PD696/PliBaWrirTt3NVs2OqcG321CyJ0Ol5wUY41i5Z/32TDfzemAFqTuXo3vNFazRPwwtMnnPP67bWWyHJWnwSmPd2OqxU5C5uJlsRD1W40A2zVVy9SXy1gowun6u4+cPx90bdx439tEqBFWat3+1iqcYwEvLCfCWfUYXPFPM+7w8PDg55uR6vDaMuNh6rBzn31XaVuNd302zea4YEx7xfGjECR6jl9zGUmGT9q9W5LBLywP0o15FnV4+2lFBxYHUaT4iq2/gKe1lfPnXdp0Y1++28WmuBv48ZWpOdFAHQu9UcvM3507s6X9gh4Yb8DPE9UzjOtTwpnPd+WQl4aCQkqoRTsq692PNEG47t/+l0T/LVvtGnSw88ElOm6Wi7c2uSVpmqPgBf2O9mMWrxzLZHl6vDw8KjH21LIy749rADzcB7Ya199Uwl5ac7DWEC//Wi70P6YPydMsa8CjUoLtaY5faTVu+0S8ML+nRpcZettPd4UHAh52Re390JzffVNJeRl/4S73z7m5sZGD9peyZyzMGJhswBNSQu0rjJ/3NisZQJe2P+gd6Ezyzaplrd39Hl7Cnl5KuEuNN9X3zj3skfC3c3mmqC6bfn3/Zg5DwHYu7Qw633mj7/WH7VPwAvNTDRvOxj0DdVJfbKY9Xx7rkJetySyLeEutNdX31RCXp5OuJvnt8K//20H+8hkw39f2C2BJqyFuzl330ZfpPZuBwS80JxTA61sva7Hm4IDIS/beiXchdb76pv67Xnlrgt2I9zNV/pChi4C7umG/27eAezdWribO1/3zJGOCHihuUlmdGrCnTxx0rjucz3etW0aIe+NTUbGwOZSM0AnfbXSOuwizu3C3e3GRKWOh+K7txpwZy6E+GDPBPbc98T8PGru5oa7rz1YrTsCXmh28Bud22stkSVOGhdDmNCkVZluO+Fbk77jtIoQ6K6vjpD3WeWuC/I8lNMR7m7tbaHfu4vyDDnhiv4O2Ju1lbuzzP/lru4bz7VcdwS80Pwk89yAK9tZfSI5Gch2vazfXlRWiPH3idWxq9bQm37aXRfkOFVOZ+djLM53JZ7zurjI/3PmOATgyXYoy7Aac9EhAS+0NHnQBNmiVMNkIBOb20pdXpYe9oW0ahDoTz+9uuvCihIenYy64+LJSruj6aajJ8NPN+3PnlgP7EMqCfOp2jLcdRdM9wS80M4E887kMttDPd6BbVsrxAqf3Nb7wQuDGuh1Xx3lkuLhawutQbW8MPvcHRd7ObaiDUt54Fqc51sPtNPCh8mGH7MvA/vob87qt49pTp7r3CKXfhDwQruTS4OvPNP65HI5oG27WiF2WinZUJLV1epLTQGD6KsfQr2qnDCKx8UDYJ5b7bhX54WMf950tN/klC/zgDVgZ3EhqX5FSYarLf/XU3fC9IeAF9olAMx3UZ9kpgMLD+LkpmRDGSIgemb1FwxLuiAX9dNLCaT4Irb3Cw+AaeS4WlTjL9Vw1+EF3Zz6u8YjwE7SwqpYtbvt3Fu42zMCXmh/AKweb753qcD7kLZxTACeV+XVpCspIDhXkgEGfz5elWyYa40ixHZ+lmrn09wxNdbj6XNX4/c0Dt60gvez26OBHfqXWf2KWrsX1XYlGYJwt4cEvND+ADgmFyYYeQZVj/er7XyZwgMD7nEFBM/TJBYY/vl4Ub/irgurecdrdVHOw1/a8WKkx1KX9SVzyjOYVwDZ1oLdmGdPdjivCnd7SsAL3YhVAAvNkDewTcXehxgeWM07voDAcQsjs7aaV0gyLrE9XZRr91h6qE1fjSvkfd1xkPEy42d+s/cB35Nq7F7Vrz+r3YLd1ZzoWLjbXwJe6G4ArFRDvjgZHQ14e1/Wb88qtwILCIC+9tOLVJs3wqmFFhm02H4vUikd27L9YylWuo6lzvFNlzWbI5Cp3zaNfz8rPQJ8ow85ioVS9Svq68aK3Vg0tWv5w+jbnykH028/aALobAA8rzvb16mjZbPrur0Ge4tlmmQe198hbrWLp5NObNLeBwTnJk1Q3rk5JjDpgSMvnzARon0xPnhTLVdcKsfQ7XF0Ux9DD2O3AX+NCHe7XoyRs3rXOAVYXRCK17R+/ZTe9zWGedXhQybZwr80QWMH2Ptq+6cQDpmDfvd9Ja6oHWmJwQy297HN42R7Jjzob0CgP8vaj/9X0Nc9TsEfZe3jq776Qmv0f3yQxqILTdGrY2hWDTPk7Xy8mfqfTxnjxEXlrgMo2VGD88noW06NgYfDCl7oXgwgP2qGLFEQ/sPQ6/6klUWXaQV3rOad2bS9CQjOrfwCvuqro2+40Ff3tt8W7Pb3GIqVvHE7byx8GcoF7b4sWjnJbLNJ5a4woIG+sHJHzOCowQvdD37HVKusDVfpFpRRhAdphcizNEmlu4AgakqdGsQAj/TVi6/6av1Ev/rthebo/Tg3HmLY97qNcVy/6NEdPO4cALowT+fXS/Oi4RHwQj8Gv68rD+DKFasZ3o08PEBAAPS7r46VLSY++m3yj53n6bjpoxiDP+9L3f1U2mJizwFa7gejJNmx8+twCXihP05NFrPFE0GvRh4e3NgfBARAL/vqz2lly3/SudsTpZsV58JX+u1RHDuX1XI177xH+9ZpDwMNq3eBNudFq2B3rjmGzUPWGuIha+y430S9rXdaItuoT0TpARuzavkwtonN/SQxcXtbqSW1z/3TQ9bgy/FwlPrq3LqZbBbH3Nuh193nu2Peq47GNw8PVO3jmGDAD6YDhjcvunHRdFwEvM2dnAW87LrvvEsTRPIG6M9KCOzSROhX+4aAoEf7pIAX/nlcHKR++hf99c6TzrhN/o1JZzHHTBwnL1uaN8U+1duLvan/+FS5SAQ0d359m2qjM0I/aALonbjdM1YCTTTFRqt6vMdj/6KpLtxtesDcajJkHxEQAP3qqyM0uomXsNekk53GN7+mcfC+fE771299qbH7HWeVcBfYj7v0+lC/5uZEZbCCtyFW8PLE/Sf2nfdawv63YT85qr6s6p0Uvg98XgsI5g6JVvY/K3gh/3hZhb0/V8o4rCae80qoy+PHyyTNo36qlmHvdMt9a1F9CTXuBtRHKNMGbCv6uz/Sn+O8+tl5tVwC3uZO0gJenroPRV2yMy2R7XnJJ7NCw94Y0ESo+2EAq3LGuM8JeOFpffYq8C1hvLi6CGclEU85br53rCzsVwCUTMDb3ABEwMs+9qOP1X5vUxuzGNQ/9wCtv1a+rAcHY1opth4QuDrd7X4m4IX9HU/TdL7/uRpHmab1W0Pv9NcAAM1Sgxf6LerxftQMWWIyHE8dflF6Q6QVLK/Ta7VSbDrA4CDC+nn9+r1aBrpzuzkw0n57nvq7Vb99kPrreP249ue+XbCLfnoV5sYtonf6agCA9gl4od8Tvrt6kveq/uOF1shyUrfXrG63G03x9/0oTb6/Dg6m1bK+3aTqfqX4qmbe76uwwK2WQMH99uoC1/zr/7Z2m/rqPfrxg6/+3b4s0it8WOuvP6d++rOtBQDQPSUaGpJWzJX0AA11r5rdn6ZaIZvC8rvvZ5PqS9gb/deP1ZfVvk/p01YrvFZ//n3t39le+qUhEGRRynFqPAcAMEACXgB28q3gwO25AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwP+zBwckAAAAAIL+v+5HqAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwlwADx/6VpJmsPdwAAAABJRU5ErkJggg==" style="height:clamp(38.5px,4.2vw,66.5px);display:block;" alt="Kore.ai" />
+  </div>
+
+  <!-- SVG layer for connecting lines and timeline dots -->
+  <svg class="lines-layer" viewBox="0 0 12189 6858" preserveAspectRatio="none">
+    <!-- Phase 1 upper stems (white) -->
+    <line x1="1713" y1="2784" x2="1713" y2="3358" stroke="#FFFFFF" stroke-width="12" opacity="0.85"></line>
+    <line x1="2907" y1="2793" x2="2907" y2="3358" stroke="#FFFFFF" stroke-width="12" opacity="0.85"></line>
+    <line x1="2310" y1="2058" x2="2310" y2="3358" stroke="#FFFFFF" stroke-width="12" opacity="0.85"></line>
+    <line x1="3504" y1="2092" x2="3504" y2="3358" stroke="#FFFFFF" stroke-width="12" opacity="0.85"></line>
+    <!-- Phase 1 lower stems (white) -->
+    <line x1="2609" y1="3448" x2="2609" y2="3965" stroke="#FFFFFF" stroke-width="12" opacity="0.85"></line>
+    <line x1="3803" y1="3448" x2="3803" y2="3965" stroke="#FFFFFF" stroke-width="12" opacity="0.85"></line>
+    <line x1="2012" y1="3448" x2="2012" y2="4723" stroke="#FFFFFF" stroke-width="12" opacity="0.85"></line>
+    <line x1="3206" y1="3448" x2="3206" y2="4723" stroke="#FFFFFF" stroke-width="12" opacity="0.85"></line>
+
+    <!-- Phase 2 upper stems (near-white) -->
+    <line x1="5498" y1="2784" x2="5498" y2="3358" stroke="#F0F6F9" stroke-width="12" opacity="0.9"></line>
+    <line x1="6692" y1="2784" x2="6692" y2="3358" stroke="#F0F6F9" stroke-width="12" opacity="0.9"></line>
+    <line x1="6095" y1="2058" x2="6095" y2="3358" stroke="#F0F6F9" stroke-width="12" opacity="0.9"></line>
+    <line x1="7289" y1="2058" x2="7289" y2="3358" stroke="#F0F6F9" stroke-width="12" opacity="0.9"></line>
+    <!-- Phase 2 lower stems -->
+    <line x1="6393" y1="3448" x2="6393" y2="3965" stroke="#F0F6F9" stroke-width="12" opacity="0.9"></line>
+    <line x1="7587" y1="3448" x2="7587" y2="3965" stroke="#F0F6F9" stroke-width="12" opacity="0.9"></line>
+    <line x1="5796" y1="3448" x2="5796" y2="4723" stroke="#F0F6F9" stroke-width="12" opacity="0.9"></line>
+    <line x1="6990" y1="3448" x2="6990" y2="4723" stroke="#F0F6F9" stroke-width="12" opacity="0.9"></line>
+
+    <!-- Phase 3-4 upper stems -->
+    <line x1="9282" y1="2773" x2="9282" y2="3358" stroke="#F0F6F9" stroke-width="12" opacity="0.9"></line>
+    <line x1="9879" y1="2058" x2="9879" y2="3358" stroke="#F0F6F9" stroke-width="12" opacity="0.9"></line>
+    <line x1="10476" y1="2773" x2="10476" y2="3358" stroke="#F0F6F9" stroke-width="12" opacity="0.9"></line>
+    <!-- Phase 3-4 lower stems -->
+    <line x1="9580" y1="3448" x2="9580" y2="3965" stroke="#F0F6F9" stroke-width="12" opacity="0.9"></line>
+    <line x1="10177" y1="3448" x2="10177" y2="4723" stroke="#F0F6F9" stroke-width="12" opacity="0.9"></line>
+
+    <!-- Timeline dots - Phase 1 -->
+    <rect x="1667" y="3358" width="91" height="91" rx="6" fill="#181818"></rect>
+    <rect x="1966" y="3358" width="91" height="91" rx="6" fill="#181818"></rect>
+    <rect x="2264" y="3358" width="91" height="91" rx="6" fill="#181818"></rect>
+    <rect x="2563" y="3358" width="91" height="91" rx="6" fill="#181818"></rect>
+    <rect x="2862" y="3358" width="91" height="91" rx="6" fill="#181818"></rect>
+    <rect x="3160" y="3358" width="91" height="91" rx="6" fill="#181818"></rect>
+    <rect x="3459" y="3358" width="91" height="91" rx="6" fill="#181818"></rect>
+    <rect x="3757" y="3358" width="91" height="91" rx="6" fill="#181818"></rect>
+
+    <!-- Timeline dots - Phase 2 -->
+    <rect x="5452" y="3358" width="91" height="91" rx="6" fill="#181818"></rect>
+    <rect x="5750" y="3358" width="91" height="91" rx="6" fill="#181818"></rect>
+    <rect x="6049" y="3358" width="91" height="91" rx="6" fill="#181818"></rect>
+    <rect x="6348" y="3358" width="91" height="91" rx="6" fill="#181818"></rect>
+    <rect x="6646" y="3358" width="91" height="91" rx="6" fill="#181818"></rect>
+    <rect x="6945" y="3358" width="91" height="91" rx="6" fill="#181818"></rect>
+    <rect x="7244" y="3358" width="91" height="91" rx="6" fill="#181818"></rect>
+    <rect x="7542" y="3358" width="91" height="91" rx="6" fill="#181818"></rect>
+
+    <!-- Timeline dots - Phase 3-4 -->
+    <rect x="9236" y="3358" width="91" height="91" rx="6" fill="#181818"></rect>
+    <rect x="9535" y="3358" width="91" height="91" rx="6" fill="#181818"></rect>
+    <rect x="9833" y="3358" width="91" height="91" rx="6" fill="#181818"></rect>
+    <rect x="10132" y="3358" width="91" height="91" rx="6" fill="#181818"></rect>
+    <rect x="10430" y="3358" width="91" height="91" rx="6" fill="#181818"></rect>
+  </svg>
+
+  <!-- PHASE LABELS -->
+  <div class="phase-label" style="left:2.224%;top:44.55%;width:9.756%;height:10.15%;background:#65717C;">BEFORE<br>THE VISIT</div>
+  <div class="phase-label" style="left:32.70%;top:44.55%;width:10.90%;height:10.15%;background:#181818;">AFTER<br>THE VISIT</div>
+  <div class="phase-label" style="left:64.32%;top:44.55%;width:9.756%;height:10.15%;background:#181818;">PATIENT DISCHARGE</div>
+  <div class="phase-label" style="left:88.02%;top:44.55%;width:9.756%;height:10.15%;background:#181818;">RECOVERY &amp; BEYOND</div>
+
+  <!-- ROW 1 BOXES (top row) — sentence case applied -->
+  <div class="box box-gradient" style="left:15.89%;top:21.74%;width:6.124%;height:8.53%;" data-key="provider-search">Provider search</div>
+  <div class="box box-gradient" style="left:25.69%;top:21.74%;width:6.124%;height:8.53%;" data-key="id-card">ID card retrieval</div>
+  <div class="box box-member" style="left:46.94%;top:21.74%;width:6.124%;height:8.53%;" data-key="coverage-lookup">Coverage lookup</div>
+  <div class="box box-patient" style="left:56.97%;top:21.74%;width:6.124%;height:8.53%;" data-key="lab-reports">Lab<br>reports</div>
+  <div class="box box-patient" style="left:77.99%;top:21.74%;width:6.124%;height:8.53%;" data-key="discharge-guidance">Discharge guidance</div>
+
+  <!-- ROW 2 BOXES -->
+  <div class="box box-patient" style="left:10.29%;top:32.79%;width:7.534%;height:8.53%;" data-key="appt-scheduling">Appointment scheduling</div>
+  <div class="box box-gradient" style="left:20.79%;top:32.79%;width:6.124%;height:8.53%;" data-key="answers-support">Answers &amp; support</div>
+  <div class="box box-payer" style="left:41.04%;top:32.79%;width:7.534%;height:8.53%;" data-key="prior-auth">Prior authorization automation</div>
+  <div class="box box-gradient" style="left:51.84%;top:32.79%;width:6.124%;height:8.53%;" data-key="copay-deductible">Co-pay &amp; deductible</div>
+  <div class="box box-payer" style="left:73.39%;top:32.79%;width:5.824%;height:8.53%;" data-key="claims-status">Claims<br>status</div>
+  <div class="box box-patient" style="left:82.60%;top:32.79%;width:7.173%;height:8.53%;" data-key="post-visit">Post-visit<br>follow up</div>
+
+  <!-- ROW 3 BOXES -->
+  <div class="box box-patient" style="left:18.52%;top:57.83%;width:6.124%;height:8.53%;" data-key="symptom-triage">Symptom triage</div>
+  <div class="box box-patient" style="left:27.40%;top:57.83%;width:7.534%;height:8.53%;" data-key="reminders-directions">Reminders &amp; directions</div>
+  <div class="box box-member" style="left:49.39%;top:57.83%;width:6.124%;height:8.53%;" data-key="eob">Explanation<br>of benefits</div>
+  <div class="box box-patient" style="left:58.48%;top:57.83%;width:7.534%;height:8.53%;" data-key="reminders-notif">Reminders &amp; notifications</div>
+  <div class="box box-payer" style="left:74.88%;top:57.83%;width:7.901%;height:8.53%;" data-key="claims-adjudication">Claims adjudication</div>
+
+  <!-- ROW 4 BOXES (bottom row) -->
+  <div class="box box-gradient" style="left:12.55%;top:68.88%;width:7.901%;height:8.53%;" data-key="user-auth">User authentication</div>
+  <div class="box box-patient" style="left:22.58%;top:68.88%;width:7.448%;height:8.53%;" data-key="pre-visit-reg">Pre-visit registration</div>
+  <div class="box box-payer" style="left:43.60%;top:68.88%;width:7.901%;height:8.53%;" data-key="eligibility">Eligibility<br>lookup</div>
+  <div class="box box-member" style="left:53.12%;top:68.88%;width:8.453%;height:8.53%;" data-key="oop-expenses">Out-of-pocket expense calculation &amp; limits</div>
+  <div class="box box-patient" style="left:79.78%;top:68.88%;width:7.448%;height:8.53%;" data-key="rx-refill">Prescription<br>management</div>
+
+  <!-- LEGEND — with "-initiated" suffix -->
+  <div class="legend-dot" style="left:2.756%;top:84.93%;width:2.003%;height:3.342%;background:#FFFFFF;"></div>
+  <div class="legend-text" style="left:5.5%;top:85.6%;">Patient-initiated</div>
+
+  <div class="legend-dot" style="left:13.5%;top:84.93%;width:2.003%;height:3.342%;background:#57A0E3;"></div>
+  <div class="legend-text" style="left:16.24%;top:85.6%;">Member-initiated</div>
+
+  <div class="legend-dot" style="left:24.5%;top:84.93%;width:2.003%;height:3.342%;background:linear-gradient(135deg,#FFFFFF 0%,#F0F6F9 50%,#57A0E3 100%);"></div>
+  <div class="legend-text" style="left:27.59%;top:85.6%;">Patient &amp; Member-initiated</div>
+
+  <div class="legend-dot" style="left:40.5%;top:84.93%;width:2.003%;height:3.342%;background:#1077D7;"></div>
+  <div class="legend-text" style="left:43.25%;top:85.6%;">Provider-initiated</div>
+
+  <div class="legend-line" style="left:52.5%;top:86.71%;width:44%;"></div>
+
+  <!-- CTA Button -->
+  <a class="cta-btn" href="https://www.kore.ai/request-a-demo" target="_blank"
+     style="right:2.2%;top:83.5%;width:7.8%;height:6.5%;background:#181818;">
+    Get in touch
+  </a>
+
+</div>
+
+<!-- Tooltip -->
+<div id="tooltip" class="">
+  <div class="tt-header">
+    <div class="tt-phase" id="ttPhase"></div>
+    <div class="tt-title" id="ttTitle"></div>
+  </div>
+  <div class="tt-body" id="ttBody"></div>
+</div>
+
+<script>
+const data = {
+  "provider-search": {
+    phase: "Before the visit",
+    title: "Provider search",
+    html: `<h4>How Kore.ai helps</h4>
+      <p>Kore.ai's conversational AI helps patients and members find in-network specialists through natural language queries, connecting them to the right provider before a single phone call is made.</p>
+      <ul>
+        <li>AI-powered search across provider networks by specialty, location, language, and availability</li>
+        <li>Real-time insurance network verification, surfacing only in-network options</li>
+        <li>Seamless handoff to appointment scheduling once a provider is selected</li>
+      </ul>
+      <div class="tt-badge">&#9889; Reduces call center volume by up to 40%</div>`
+  },
+  "id-card": {
+    phase: "Before the visit",
+    title: "ID card retrieval",
+    html: `<h4>How Kore.ai helps</h4>
+      <p>Members can request a digital or physical replacement ID card through a simple chat interaction, instantly and without portal navigation.</p>
+      <ul>
+        <li>Instant digital ID card delivery via chat, SMS, or email</li>
+        <li>Automated identity verification using existing member data</li>
+        <li>Physical card reorder with address confirmation and tracking</li>
+      </ul>
+      <div class="tt-badge">&#9889; #1 most-deflected call type for payers</div>`
+  },
+  "appt-scheduling": {
+    phase: "Before the visit",
+    title: "Appointment scheduling",
+    html: `<h4>How Kore.ai helps</h4>
+      <p>Patients book, reschedule, or cancel appointments through conversational AI across voice, chat, and messaging channels, available 24/7 without hold times.</p>
+      <ul>
+        <li>Pre-built integrations with Epic, NextGen, Oracle Cerner, and Denticon for real-time slot availability</li>
+        <li>Multi-turn conversations that handle complex scheduling scenarios</li>
+        <li>Automatic waitlist management and cancellation backfill</li>
+      </ul>
+      <div class="tt-badge">&#9889; 70% of scheduling calls fully automated</div>`
+  },
+  "answers-support": {
+    phase: "Before the visit",
+    title: "Answers & support",
+    html: `<h4>How Kore.ai helps</h4>
+      <p>An intelligent support layer handles the full range of patient questions, from "What should I bring?" to "Is my procedure covered?", keeping agents focused on complex, high-value interactions.</p>
+      <ul>
+        <li>Knowledge AI draws from plan documents, provider FAQs, and clinical guidelines</li>
+        <li>Context-aware responses personalized to the patient's plan and history</li>
+        <li>Seamless escalation to a live agent with full conversation context preserved</li>
+      </ul>
+      <div class="tt-badge">&#9889; 65% first-contact resolution without agent involvement</div>`
+  },
+  "symptom-triage": {
+    phase: "Before the visit",
+    title: "Symptom triage",
+    html: `<h4>How Kore.ai helps</h4>
+      <p>An AI-guided symptom checker helps patients identify the right level of care, whether that is an ER, urgent care, telehealth, or a scheduled visit, reducing unnecessary utilization.</p>
+      <ul>
+        <li>Symptom and urgency assessment with Infermedica, Isabel, Mediktor, and in-house urgency evaluator</li>
+        <li>Directs patients to the appropriate care setting, reducing unnecessary ER visits</li>
+        <li>Captures symptom data forwarded to the provider ahead of the visit</li>
+      </ul>
+      <div class="tt-badge">&#9889; Lowers inappropriate ER utilization by up to 25%</div>`
+  },
+  "reminders-directions": {
+    phase: "Before the visit",
+    title: "Reminders & directions",
+    html: `<h4>How Kore.ai helps</h4>
+      <p>Automated, personalized reminders reach patients through their preferred channel, reducing no-shows and ensuring they arrive prepared for every visit.</p>
+      <ul>
+        <li>Multi-channel reminders (SMS, voice, WhatsApp, app push) with one-tap confirm or reschedule</li>
+        <li>Pre-visit instructions including fasting requirements, what to bring, and parking details</li>
+        <li>Smart follow-up that offers to reschedule if a confirmation is missed</li>
+      </ul>
+      <div class="tt-badge">&#9889; Reduces no-show rates by up to 30%</div>`
+  },
+  "user-auth": {
+    phase: "Before the visit",
+    title: "User authentication",
+    html: `<h4>How Kore.ai helps</h4>
+      <p>Secure, HIPAA-compliant identity verification is built into the conversation, so patients access their information with confidence and without friction.</p>
+      <ul>
+        <li>Multi-factor authentication via date of birth, member ID, last-4 SSN, or biometric voice verification</li>
+        <li>Adaptive authentication that scales security to the sensitivity of the action</li>
+        <li>Session persistence maintained across a single interaction</li>
+      </ul>
+      <div class="tt-badge">&#9889; HIPAA-compliant by design</div>`
+  },
+  "pre-visit-reg": {
+    phase: "Before the visit",
+    title: "Pre-visit registration",
+    html: `<h4>How Kore.ai helps</h4>
+      <p>Patients complete intake forms, insurance verification, and consent documents conversationally from home, arriving with paperwork already done.</p>
+      <ul>
+        <li>Guided conversational intake that populates EHR registration fields automatically</li>
+        <li>Insurance card capture via photo with automated OCR and eligibility check</li>
+        <li>Digital consent and signature collection compliant with state regulations</li>
+      </ul>
+      <div class="tt-badge">&#9889; Cuts front-desk check-in time by 60%</div>`
+  },
+  "coverage-lookup": {
+    phase: "After the visit",
+    title: "Coverage lookup",
+    html: `<h4>How Kore.ai helps</h4>
+      <p>Members ask questions like "Is this covered under my plan?" in plain language and receive clear, personalized answers instantly, with real cost estimates before services are rendered.</p>
+      <ul>
+        <li>Natural language understanding mapped to specific plan benefit details</li>
+        <li>Real-time benefits lookup by procedure code, service type, or plain description</li>
+        <li>Proactive cost estimates surfaced before services are rendered</li>
+      </ul>
+      <div class="tt-badge">&#9889; Handles 80% of coverage inquiries without an agent</div>`
+  },
+  "lab-reports": {
+    phase: "After the visit",
+    title: "Lab reports",
+    html: `<h4>How Kore.ai helps</h4>
+      <p>Patients and providers track, retrieve, and understand lab results through conversational interfaces integrated with LIS and EHR systems, with plain-language explanations on demand.</p>
+      <ul>
+        <li>Automated lab result notifications when results are ready</li>
+        <li>Plain-language explanations of common lab values</li>
+        <li>Secure, HIPAA-compliant delivery with built-in authentication</li>
+      </ul>
+      <div class="tt-badge">&#9889; Reduces results-related call volume by 50%</div>`
+  },
+  "prior-auth": {
+    phase: "After the visit",
+    title: "Prior authorization automation",
+    html: `<h4>How Kore.ai helps</h4>
+      <p>Kore.ai automates the prior authorization process end-to-end, eliminating manual follow-up and cutting the time between submission and approval from days to hours.</p>
+      <ul>
+        <li>Automated prior auth submission with intelligent form population from clinical notes</li>
+        <li>Real-time status tracking with proactive updates to the provider's office</li>
+        <li>Automated follow-up with payers on pending or denied authorizations</li>
+      </ul>
+      <div class="tt-badge">&#9889; Cuts prior auth turnaround from days to hours</div>`
+  },
+  "copay-deductible": {
+    phase: "After the visit",
+    title: "Co-pay & deductible",
+    html: `<h4>How Kore.ai helps</h4>
+      <p>Members get instant answers to the most common billing questions: "What is my copay?" and "How much of my deductible have I met?" resolved conversationally in seconds.</p>
+      <ul>
+        <li>Real-time deductible and out-of-pocket accumulator lookups</li>
+        <li>Copay estimates by service type, provider, and network status</li>
+        <li>Proactive payment reminders with easy links to pay online</li>
+      </ul>
+      <div class="tt-badge">&#9889; Top 3 call driver for health plans, now automated</div>`
+  },
+  "eob": {
+    phase: "After the visit",
+    title: "Explanation of benefits",
+    html: `<h4>How Kore.ai helps</h4>
+      <p>EOBs are among the most confusing documents in healthcare. Kore.ai breaks them down conversationally, with plain-English answers for every line item so members understand exactly what they owe and why.</p>
+      <ul>
+        <li>Conversational walkthrough of EOB line items: "What is this $350 charge?"</li>
+        <li>Automated delivery of new EOBs with a summary and link to the full document</li>
+        <li>Dispute initiation where the AI collects details and routes to the right team</li>
+      </ul>
+      <div class="tt-badge">&#9889; Transforms a friction point into a trust-building moment</div>`
+  },
+  "reminders-notif": {
+    phase: "After the visit",
+    title: "Reminders & notifications",
+    html: `<h4>How Kore.ai helps</h4>
+      <p>Post-visit reminders keep patients engaged with their care plan, covering follow-ups, medication adherence, and preventive care through automated, personalized outreach.</p>
+      <ul>
+        <li>Medication reminders with refill prompts and pharmacy contact information</li>
+        <li>Follow-up appointment scheduling triggered by visit type or provider order</li>
+        <li>Preventive care nudges including annual wellness and screenings based on plan eligibility</li>
+      </ul>
+      <div class="tt-badge">&#9889; Improves care gap closure rates by 20%</div>`
+  },
+  "eligibility": {
+    phase: "After the visit",
+    title: "Eligibility lookup",
+    html: `<h4>How Kore.ai helps</h4>
+      <p>Payer-built AI agents give authenticated providers a complete member financial responsibility summary before services are delivered. In a single session, after NPI/TIN verification and member identification, AI agents return multiple data points directly from the payer's live health plan system.</p>
+      <ul>
+        <li>Coverage status and effective dates confirmed in real time</li>
+        <li>Service-specific copay, coinsurance percentage, and deductible details surfaced instantly</li>
+        <li>Remaining out-of-pocket balance for the plan year returned in a single interaction</li>
+      </ul>
+      <div class="tt-badge">&#9889; Saves 8+ minutes per eligibility check</div>`
+  },
+  "oop-expenses": {
+    phase: "After the visit",
+    title: "Out-of-pocket expenses & limits",
+    html: `<h4>How Kore.ai helps</h4>
+      <p>Members get real-time visibility into their spend, proximity to the out-of-pocket maximum, and projected future costs, so financial surprises become a thing of the past.</p>
+      <ul>
+        <li>Real-time accumulator data covering deductible, OOP, and family versus individual limits</li>
+        <li>Predictive cost estimates for upcoming procedures based on plan and network</li>
+        <li>Payment plan options surfaced proactively when balances are high</li>
+      </ul>
+      <div class="tt-badge">&#9889; Reduces billing-related call volume by 35%</div>`
+  },
+  "discharge-guidance": {
+    phase: "Patient discharge",
+    title: "Discharge guidance",
+    html: `<h4>How Kore.ai helps</h4>
+      <p>Personalized discharge instructions are delivered through the patient's preferred channel, reinforcing bedside guidance at the moment it matters most and reducing the risk of readmission.</p>
+      <ul>
+        <li>Conversational delivery with teach-back questions to confirm patient understanding</li>
+        <li>Medication lists with dosage, timing, and interaction guidance in plain language</li>
+        <li>Red-flag symptom alerts with clear escalation instructions</li>
+      </ul>
+      <div class="tt-badge">&#9889; Reduces 30-day readmission rates</div>`
+  },
+  "claims-status": {
+    phase: "Patient discharge",
+    title: "Claims status",
+    html: `<h4>How Kore.ai helps</h4>
+      <p>Claims status is among the highest-volume call drivers for payers. Kore.ai automates the entire lookup, delivering real-time status without a phone queue or manual intervention.</p>
+      <ul>
+        <li>Real-time claims status by date of service, provider, or claim number</li>
+        <li>Proactive claim status notifications as claims move through adjudication</li>
+        <li>Automated appeal initiation for denied claims with guided information collection</li>
+      </ul>
+      <div class="tt-badge">&#9889; #2 call driver automated at scale, 75% containment rate</div>`
+  },
+  "post-visit": {
+    phase: "Recovery & beyond",
+    title: "Post-visit follow up",
+    html: `<h4>How Kore.ai helps</h4>
+      <p>Automated post-visit outreach checks on recovery, captures satisfaction data, and confirms care plan adherence at scale, without burdening clinical staff.</p>
+      <ul>
+        <li>Automated check-in messages 24 to 72 hours post-visit or post-discharge</li>
+        <li>Symptom monitoring with escalation to clinical staff when red flags appear</li>
+        <li>Patient satisfaction surveys embedded within the conversation</li>
+      </ul>
+      <div class="tt-badge">&#9889; Improves CAHPS scores through consistent outreach</div>`
+  },
+  "claims-adjudication": {
+    phase: "Patient discharge",
+    title: "Claims adjudication",
+    html: `<h4>How Kore.ai helps</h4>
+      <p>Kore.ai accelerates payer operations by automating routine claims adjudication inquiries and intelligently routing complex cases to the right teams.</p>
+      <ul>
+        <li>Automated first-pass adjudication using AI to flag anomalies and missing information</li>
+        <li>Provider-facing AI for claims correction and resubmission guidance</li>
+        <li>Internal agent assist that surfaces relevant policy rules during manual review</li>
+      </ul>
+      <div class="tt-badge">&#9889; Accelerates clean claim rates and reduces rework</div>`
+  },
+  "rx-refill": {
+    phase: "Recovery & beyond",
+    title: "Prescription management",
+    html: `<h4>How Kore.ai helps</h4>
+      <p>AI agents streamline prescription fill and refill requests across voice, chat, SMS, and web portals, available 24/7. They authenticate patients, validate prescriptions and insurance coverage, route eligible refills to the preferred pharmacy, and escalate prior authorization cases to the prescriber.</p>
+      <ul>
+        <li>Conversational refill requests integrated with pharmacy and PBM systems</li>
+        <li>Automated refill reminders before patients run out of medication</li>
+        <li>Prior authorization cases flagged and escalated to the prescriber without manual intervention</li>
+        <li>Post-fill adherence reminders and refill gap alerts routed to the care team</li>
+      </ul>
+      <div class="tt-badge">&#9889; Improves medication adherence and Star Ratings</div>`
+  }
+};
+
+// Tooltip logic
+const tooltip = document.getElementById('tooltip');
+const ttPhase = document.getElementById('ttPhase');
+const ttTitle = document.getElementById('ttTitle');
+const ttBody = document.getElementById('ttBody');
+let hideTimeout = null;
+
+document.querySelectorAll('.box').forEach(box => {
+  box.addEventListener('mouseenter', (e) => {
+    clearTimeout(hideTimeout);
+    const key = box.dataset.key;
+    const item = data[key];
+    if (!item) return;
+    ttPhase.textContent = item.phase;
+    ttTitle.textContent = item.title;
+    ttBody.innerHTML = item.html;
+    tooltip.classList.add('visible');
+    positionTooltip(box);
+  });
+  box.addEventListener('mouseleave', () => {
+    hideTimeout = setTimeout(() => {
+      tooltip.classList.remove('visible');
+    }, 80);
+  });
+});
+
+function positionTooltip(box) {
+  const rect = box.getBoundingClientRect();
+  const ttW = 340;
+  const ttH = tooltip.offsetHeight || 350;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  let left, top;
+  if (rect.right + 12 + ttW < vw) {
+    left = rect.right + 12;
+  } else if (rect.left - 12 - ttW > 0) {
+    left = rect.left - 12 - ttW;
+  } else {
+    left = Math.max(8, Math.min(vw - ttW - 8, rect.left + rect.width / 2 - ttW / 2));
+  }
+  top = rect.top + rect.height / 2 - ttH / 2;
+  top = Math.max(8, Math.min(vh - ttH - 8, top));
+  tooltip.style.left = left + 'px';
+  tooltip.style.top = top + 'px';
+}
+</script>
+
+</body>
+</html>
